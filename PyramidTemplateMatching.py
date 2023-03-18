@@ -3,6 +3,7 @@ import matplotlib
 import numpy as np
 import imutils
 import matplotlib.pyplot as plt
+from scipy import ndimage
 
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
@@ -26,7 +27,7 @@ def create_gaussian_pyramid(path):
 
     previous = img
 
-    result = [img]
+    result = []
 
     for _ in OCTAVES:
         # Apply Gaussian filter
@@ -53,16 +54,31 @@ def create_gaussian_pyramid(path):
 
 
 def rotations(images):
+    rots = []
     for img in images:
         for angle in range(0, 360, 90):
-            x = imutils.rotate(img, angle)
+            rots.append(ndimage.rotate(img, angle))
+            # rots.append(imutils.rotate(img, angle))
+    return rots
 
 
-pyramid = create_gaussian_pyramid(TRAINING_FOLDER + "027-gas-station.png")
+rotations = rotations(create_gaussian_pyramid(TRAINING_FOLDER + "027-gas-station.png"))
+test = cv.imread(TEST_IMAGES_FOLDER + "test_image_1.png")
 
-# Show all the images
-# for i in pyramid:
-#     plt.imshow(cv.cvtColor(i, cv.COLOR_GRAY2RGB))
-#     plt.show()
+temp = cv.imread(TRAINING_FOLDER + "027-gas-station.png")
+w = temp.shape[0]
+h = temp.shape[1]
 
-rotations(pyramid)
+for r in rotations:
+    print("test: ", test.shape)
+    print("img: ", r.shape)
+
+    result = cv.matchTemplate(test, r, cv.TM_CCOEFF_NORMED)
+    print(result)
+    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+
+    top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+
+    cv.rectangle(test, top_left, bottom_right, 255, 2)
+
