@@ -1,9 +1,9 @@
+import pickle
 import cv2 as cv
 import matplotlib
 import numpy as np
 import imutils
 import matplotlib.pyplot as plt
-from scipy import ndimage
 
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
@@ -57,23 +57,27 @@ def rotations(images):
     rots = []
     for img in images:
         for angle in range(0, 360, 90):
-            rots.append(ndimage.rotate(img, angle))
-            # rots.append(imutils.rotate(img, angle))
+            rots.append(imutils.rotate(img, angle))
     return rots
 
 
-rotations = rotations(create_gaussian_pyramid(TRAINING_FOLDER + "027-gas-station.png"))
-test = cv.imread(TEST_IMAGES_FOLDER + "test_image_1.png")
+scaled_pyramid = create_gaussian_pyramid(TRAINING_FOLDER + "027-gas-station.png")
 
-temp = cv.imread(TRAINING_FOLDER + "027-gas-station.png")
-w = temp.shape[0]
-h = temp.shape[1]
+for i, img in enumerate(scaled_pyramid):
+    file = open("{}test.dat".format(i), 'wb')
+    pickle.dump(img, file)
+    file.close()
 
-for r in rotations:
-    print("test: ", test.shape)
-    print("img: ", r.shape)
+# rotations = rotations(scaled_pyramid)
+test = cv.imread(TEST_IMAGES_FOLDER + "test_image_1.png", cv.IMREAD_GRAYSCALE)
 
-    result = cv.matchTemplate(test, r, cv.TM_CCOEFF_NORMED)
+method = eval('cv.TM_CCOEFF_NORMED')
+
+for i, r in enumerate(scaled_pyramid):
+    template = np.load("{}test.dat".format(i), mmap_mode=None, allow_pickle=True, fix_imports=True, encoding='ASCII')
+    w, h = template.shape[::-1]
+
+    result = cv.matchTemplate(test, template, method)
     print(result)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
 
@@ -81,4 +85,7 @@ for r in rotations:
     bottom_right = (top_left[0] + w, top_left[1] + h)
 
     cv.rectangle(test, top_left, bottom_right, 255, 2)
+    plt.imshow(test, cmap='gray')
+
+    plt.show()
 
