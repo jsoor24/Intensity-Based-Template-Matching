@@ -61,7 +61,7 @@ def rotations(images):
     return rots
 
 
-scaled_pyramid = create_gaussian_pyramid(TRAINING_FOLDER + "027-gas-station.png")
+scaled_pyramid = create_gaussian_pyramid(TRAINING_FOLDER + "029-theater.png")
 
 for i, img in enumerate(scaled_pyramid):
     file = open("{}test.dat".format(i), 'wb')
@@ -84,7 +84,7 @@ for i, r in enumerate(scaled_pyramid):
     top_left = max_loc
     bottom_right = (top_left[0] + w, top_left[1] + h)
 
-    cv.rectangle(test, top_left, bottom_right, 255, 2)
+    cv.rectangle(test, top_left, bottom_right, 0, 2)
     plt.imshow(test, cmap='gray')
 
     plt.show()
