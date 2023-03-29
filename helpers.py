@@ -11,4 +11,3 @@ def white_to_black(img):
 
 def get_object_name(file):
     object_name = file[4:len(file) - 4]
-    print(object_name)
