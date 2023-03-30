@@ -10,6 +10,8 @@ from helpers import *
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
 TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
+ROT_FILE = "templates/rotations.dat"
+SCA_FILE = "templates/scales.dat"
 
 OCTAVES = [1, 2, 3, 4]
 ROTATIONS = [0, 90, 180, 270]
@@ -46,6 +48,12 @@ def create_gaussian_pyramid(img):
 
 
 def generate_templates():
+    if os.path.exists(ROT_FILE) and os.path.exists(SCA_FILE):
+        if ROTATIONS == np.load(ROT_FILE, allow_pickle=True):
+            if OCTAVES == np.load(SCA_FILE, allow_pickle=True):
+                print("Already have templates")
+                return
+
     for file in os.listdir(TRAINING_FOLDER):
         # Read the image, grayscale the image then fill the background with black
         image = cv.imread(TRAINING_FOLDER + file)
@@ -68,6 +76,14 @@ def generate_templates():
                 output = open("templates/{}/r{}-s{}.dat".format(object_name, r, o), 'wb')
                 pickle.dump(rotated, output)
                 output.close()
+
+    output = open(ROT_FILE, 'wb')
+    pickle.dump(ROTATIONS, output)
+    output.close()
+
+    output = open(SCA_FILE, 'wb')
+    pickle.dump(OCTAVES, output)
+    output.close()
 
 
 generate_templates()
