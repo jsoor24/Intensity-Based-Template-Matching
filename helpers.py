@@ -11,3 +11,10 @@ def white_to_black(img):
 
 def get_object_name(file):
     return file[4:len(file) - 4]
+
+
+def get_scale_percentage(depth, n=100):
+    if depth == 0:
+        return n
+
+    return get_scale_percentage(depth - 1, int(n / 2))
