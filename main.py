@@ -10,8 +10,8 @@ from helpers import *
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
 TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
-ROT_FILE = "templates/rotations.dat"
-SCA_FILE = "templates/scales.dat"
+ROT_FILE = "templates/rotations.pkl"
+SCA_FILE = "templates/scales.pkl"
 
 OCTAVES = [1, 2, 3, 4]
 ROTATIONS = [0, 90, 180, 270]
@@ -41,7 +41,7 @@ def create_gaussian_pyramid(img):
             i += 1
 
         if o in OCTAVES:
-            result.append((o, scaled))
+            result.append((get_scale_percentage(o), scaled))
         previous = scaled
 
     return result
@@ -66,16 +66,30 @@ def generate_templates():
         pyramid = create_gaussian_pyramid(image)
 
         # Check if there is already a folder for templates for this object
-        if not os.path.exists("templates/{}".format(object_name)):
-            os.makedirs("templates/{}".format(object_name))
+        if not os.path.exists("templates/"):
+            os.makedirs("templates/")
+
+        dictionary = {"object_name": object_name}
+
+        for scale, scaled in pyramid:
+            rotations = dict()
+            for r in ROTATIONS:
+                rotations[r] = imutils.rotate(scaled, r)
+            dictionary[scale] = rotations
+
+        if object_name == "gas-station":
+            print(dictionary)
+
+        with open("templates/{}.pkl".format(object_name), 'wb') as f:
+            pickle.dump(dictionary, f)
 
         # Write all the scaled/rotated templates to files
-        for o, scaled in pyramid:
-            for r in ROTATIONS:
-                rotated = imutils.rotate(scaled, r)
-                output = open("templates/{}/r{}-s{}.dat".format(object_name, r, o), 'wb')
-                pickle.dump(rotated, output)
-                output.close()
+        # for scale, scaled in pyramid:
+        #     for r in ROTATIONS:
+        #         rotated = imutils.rotate(scaled, r)
+        #         output = open("templates/{}/r{}-s{}.dat".format(object_name, r, scale), 'wb')
+        #         pickle.dump(rotated, output)
+        #         output.close()
 
     output = open(ROT_FILE, 'wb')
     pickle.dump(ROTATIONS, output)
