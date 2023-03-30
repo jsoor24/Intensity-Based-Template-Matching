@@ -4,6 +4,7 @@ import matplotlib
 import numpy as np
 import imutils
 import matplotlib.pyplot as plt
+from helpers import *
 
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
@@ -25,11 +26,11 @@ def create_gaussian_pyramid(path):
     img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
     img = white_to_black(img)
 
-    previous = img
-
     result = []
+    previous = img
+    maximum = max(OCTAVES)
 
-    for _ in OCTAVES:
+    for o in range(0, maximum + 1):
         # Apply Gaussian filter
         blurred = cv.GaussianBlur(previous, [5, 5], 1)
 
@@ -47,7 +48,8 @@ def create_gaussian_pyramid(path):
                 j += 1
             i += 1
 
-        result.append(scaled)
+        if o in OCTAVES:
+            result.append((get_scale_percentage(o), scaled))
         previous = scaled
 
     return result
@@ -63,29 +65,56 @@ def rotations(images):
 
 scaled_pyramid = create_gaussian_pyramid(TRAINING_FOLDER + "029-theater.png")
 
-for i, img in enumerate(scaled_pyramid):
-    file = open("{}test.dat".format(i), 'wb')
+for percentage, img in scaled_pyramid:
+    file = open("{}test.dat".format(percentage), 'wb')
     pickle.dump(img, file)
     file.close()
 
 # rotations = rotations(scaled_pyramid)
 test = cv.imread(TEST_IMAGES_FOLDER + "test_image_1.png", cv.IMREAD_GRAYSCALE)
+test = cv.GaussianBlur(test, [5, 5], 1)
 
 method = eval('cv.TM_CCOEFF_NORMED')
 
-for i, r in enumerate(scaled_pyramid):
-    template = np.load("{}test.dat".format(i), mmap_mode=None, allow_pickle=True, fix_imports=True, encoding='ASCII')
+best_val = 0
+best_loc = 0
+b_w = 0
+b_h = 0
+
+for percentage, r in scaled_pyramid:
+    template = np.load("{}test.dat".format(percentage), mmap_mode=None, allow_pickle=True, fix_imports=True, encoding='ASCII')
     w, h = template.shape[::-1]
 
     result = cv.matchTemplate(test, template, method)
-    print(result)
+    # print(result)
+
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
 
-    top_left = max_loc
-    bottom_right = (top_left[0] + w, top_left[1] + h)
+    print("{}%: {}".format(percentage, max_val))
 
-    cv.rectangle(test, top_left, bottom_right, 0, 2)
-    plt.imshow(test, cmap='gray')
+    if percentage == 6:
+        max_val = max_val * 0.5
+    if percentage == 12:
+        max_val = max_val * 0.6
+    if percentage == 25:
+        max_val = max_val * 0.7
+    if percentage == 50:
+        max_val = max_val * 0.7
 
-    plt.show()
+    print("{}%: {}".format(percentage, max_val))
+
+    if max_val > best_val:
+        best_val = max_val
+        best_loc = max_loc
+        b_w = w
+        b_h = h
+
+top_left = best_loc
+bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
+print(best_val)
+
+cv.rectangle(test, top_left, bottom_right, 0, 2)
+plt.imshow(test, cmap='gray')
+
+plt.show()
 
