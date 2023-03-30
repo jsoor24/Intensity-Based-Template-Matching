@@ -100,4 +100,50 @@ def generate_templates():
     output.close()
 
 
+def template_matching():
+    test = cv.imread(TEST_IMAGES_FOLDER + "test_image_1.png", cv.IMREAD_GRAYSCALE)
+    test = cv.GaussianBlur(test, [5, 5], 1)
+
+    for file in os.listdir("templates/"):
+        if file in ROT_FILE or file in SCA_FILE:
+            continue
+
+        with open("templates/{}".format(file), 'rb') as f:
+            dictionary = pickle.load(f)
+
+        best_val = 0
+        best_loc = 0
+        b_w = 0
+        b_h = 0
+
+        for o in OCTAVES:
+            scale = get_scale_percentage(o)
+
+            rotations = dictionary[scale]
+
+            for r, template in rotations.items():
+                w, h = template.shape[::-1]
+
+                result = cv.matchTemplate(test, template, cv.TM_CCORR_NORMED)
+
+                _, max_val, _, max_loc = cv.minMaxLoc(result)
+
+                if scale == 6.25:
+                    max_val = max_val * 0.5
+                elif scale == 12.5:
+                    max_val = max_val * 0.6
+                elif scale == 25:
+                    max_val = max_val * 0.7
+                elif scale == 50:
+                    max_val = max_val * 0.7
+                else:
+                    max_val = max_val * 0.4
+
+                if max_val > best_val:
+                    best_val = max_val
+                    best_loc = max_loc
+                    b_w = w
+                    b_h = h
+
+
 generate_templates()
