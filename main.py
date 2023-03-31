@@ -22,9 +22,9 @@ def create_gaussian_pyramid(img):
     previous = img
     maximum = max(OCTAVES)
 
-    for o in range(0, maximum):
+    for o in range(0, maximum + 1):
         # Apply Gaussian filter
-        blurred = cv.GaussianBlur(previous, [5, 5], 1)
+        blurred = cv.GaussianBlur(previous, [5, 5], 0.5)
 
         # Calculate dimensions of sub-sampled image
         h = blurred.shape[0]
@@ -48,6 +48,7 @@ def create_gaussian_pyramid(img):
 
 
 def generate_templates():
+    # TODO check the number of files (should be 52) against training (50)
     if os.path.exists(ROT_FILE) and os.path.exists(SCA_FILE):
         if ROTATIONS == np.load(ROT_FILE, allow_pickle=True):
             if OCTAVES == np.load(SCA_FILE, allow_pickle=True):
@@ -77,9 +78,6 @@ def generate_templates():
                 rotations[r] = imutils.rotate(scaled, r)
             dictionary[scale] = rotations
 
-        if object_name == "gas-station":
-            print(dictionary)
-
         with open("templates/{}.pkl".format(object_name), 'wb') as f:
             pickle.dump(dictionary, f)
 
@@ -100,9 +98,10 @@ def generate_templates():
     output.close()
 
 
-def template_matching():
-    test = cv.imread(TEST_IMAGES_FOLDER + "test_image_1.png", cv.IMREAD_GRAYSCALE)
-    test = cv.GaussianBlur(test, [5, 5], 1)
+def template_matching(path="test_image_1.png"):
+    test = cv.imread(TEST_IMAGES_FOLDER + path, cv.IMREAD_GRAYSCALE)
+    test = cv.GaussianBlur(test, [9, 9], 1)
+    test = white_to_black(test)
 
     for file in os.listdir("templates/"):
         if file in ROT_FILE or file in SCA_FILE:
@@ -113,8 +112,8 @@ def template_matching():
 
         best_val = 0
         best_loc = 0
-        b_w = 0
         b_h = 0
+        b_w = 0
 
         for o in OCTAVES:
             scale = get_scale_percentage(o)
@@ -124,6 +123,8 @@ def template_matching():
             for r, template in rotations.items():
                 w, h = template.shape[::-1]
 
+                # cv.TM_SQDIFF_NORMED
+                # cv.TM_CCORR_NORMED
                 result = cv.matchTemplate(test, template, cv.TM_CCORR_NORMED)
 
                 _, max_val, _, max_loc = cv.minMaxLoc(result)
@@ -142,8 +143,31 @@ def template_matching():
                 if max_val > best_val:
                     best_val = max_val
                     best_loc = max_loc
-                    b_w = w
                     b_h = h
+                    b_w = w
+
+                # if dictionary["object_name"] == "windmill":
+                #     plt.imshow(template, cmap='gray')
+                #     plt.show()
+
+        if best_val > 0.64:
+            print("{}:\t\t\t{}".format(dictionary["object_name"], best_val))
+
+        # if dictionary["object_name"] == "gas-station":
+        #     cv.rectangle(test, top_left, bottom_right, 255, 2)
+        #     plt.imshow(test, cmap='gray')
+        #     plt.show()
+
+        if best_val > 0.64:
+            top_left = best_loc
+            bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
+            cv.rectangle(test, top_left, bottom_right, 255, 2)
+
+    plt.imshow(test, cmap='gray')
+    plt.show()
 
 
 generate_templates()
+
+for i in range(1, 21):
+    template_matching("test_image_{}.png".format(i))
