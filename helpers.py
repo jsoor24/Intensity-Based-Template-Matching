@@ -1,7 +1,7 @@
 def white_to_black(img):
     for m in range(0, img.shape[0]):
         for n in range(0, img.shape[1]):
-            if img[m, n] == 255:
+            if img[m, n] >= 240:
                 img[m, n] = 0
     return img
 
