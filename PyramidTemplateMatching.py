@@ -92,9 +92,9 @@ for percentage, r in scaled_pyramid:
 
     print("{}%: {}".format(percentage, max_val))
 
-    if percentage == 6:
+    if percentage == 6.25:
         max_val = max_val * 0.5
-    if percentage == 12:
+    if percentage == 12.5:
         max_val = max_val * 0.6
     if percentage == 25:
         max_val = max_val * 0.7
