@@ -1,17 +1,16 @@
 import pickle
 import cv2 as cv
 import matplotlib
-import numpy as np
 import imutils
 import matplotlib.pyplot as plt
-import os
 from helpers import *
 
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
 TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
-ROT_FILE = "templates/rotations.pkl"
-SCA_FILE = "templates/scales.pkl"
+TEMPLATES_FOLDER = "templates/"
+ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
+SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
 
 OCTAVES = [1, 2, 3, 4]
 ROTATIONS = [0, 90, 180, 270]
@@ -48,12 +47,8 @@ def create_gaussian_pyramid(img):
 
 
 def generate_templates():
-    # TODO check the number of files (should be 52) against training (50)
-    if os.path.exists(ROT_FILE) and os.path.exists(SCA_FILE):
-        if ROTATIONS == np.load(ROT_FILE, allow_pickle=True):
-            if OCTAVES == np.load(SCA_FILE, allow_pickle=True):
-                print("Already have templates")
-                return
+    if check_templates(ROT_FILE, SCA_FILE, TEMPLATES_FOLDER, TRAINING_FOLDER, ROTATIONS, OCTAVES):
+        return
 
     for file in os.listdir(TRAINING_FOLDER):
         # Read the image, grayscale the image then fill the background with black
@@ -67,8 +62,8 @@ def generate_templates():
         pyramid = create_gaussian_pyramid(image)
 
         # Check if there is already a folder for templates for this object
-        if not os.path.exists("templates/"):
-            os.makedirs("templates/")
+        if not os.path.exists(TEMPLATES_FOLDER):
+            os.makedirs(TEMPLATES_FOLDER)
 
         dictionary = {"object_name": object_name}
 
@@ -78,14 +73,14 @@ def generate_templates():
                 rotations[r] = imutils.rotate(scaled, r)
             dictionary[scale] = rotations
 
-        with open("templates/{}.pkl".format(object_name), 'wb') as f:
+        with open("{}{}.pkl".format(TEMPLATES_FOLDER, object_name), 'wb') as f:
             pickle.dump(dictionary, f)
 
         # Write all the scaled/rotated templates to files
         # for scale, scaled in pyramid:
         #     for r in ROTATIONS:
         #         rotated = imutils.rotate(scaled, r)
-        #         output = open("templates/{}/r{}-s{}.dat".format(object_name, r, scale), 'wb')
+        #         output = open("{}{}/r{}-s{}.dat".format(TEMPLATES_FOLDER, object_name, r, scale), 'wb')
         #         pickle.dump(rotated, output)
         #         output.close()
 
@@ -103,11 +98,11 @@ def template_matching(path="test_image_1.png"):
     test = cv.GaussianBlur(test, [9, 9], 1)
     test = white_to_black(test)
 
-    for file in os.listdir("templates/"):
+    for file in os.listdir(TEMPLATES_FOLDER):
         if file in ROT_FILE or file in SCA_FILE:
             continue
 
-        with open("templates/{}".format(file), 'rb') as f:
+        with open("{}{}".format(TEMPLATES_FOLDER, file), 'rb') as f:
             dictionary = pickle.load(f)
 
         best_val = 0
