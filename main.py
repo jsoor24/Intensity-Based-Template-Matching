@@ -17,6 +17,14 @@ ROTATIONS = [0, 90, 180, 270]
 
 
 def create_gaussian_pyramid(img):
+    """
+    Takes an image and creates a Gaussian pyramid by blurring the
+    image and then down-sampling by a factor of 2. Number of octaves
+    determined by OCTAVES
+    :param img: The image to create the Gaussian pyramid from
+    :return: The Gaussian pyramid as a list of tuples (scale %, image)
+    """
+
     result = []
     previous = img
     maximum = max(OCTAVES)
@@ -47,6 +55,17 @@ def create_gaussian_pyramid(img):
 
 
 def generate_templates():
+    """
+    Goes through all the provided template images and checks if we've already
+    trained with the current parameters (OCTAVES/ROTATIONS).
+    If not, for each file:
+     - create Gaussian pyramid
+     - write all rotations for each scale to a dictionary
+     - write dictionary to file
+    And write two metadata files holding OCTAVES/ROTATIONS
+    :return: ---
+    """
+
     if check_templates(ROT_FILE, SCA_FILE, TEMPLATES_FOLDER, TRAINING_FOLDER, ROTATIONS, OCTAVES):
         return
 
@@ -76,14 +95,6 @@ def generate_templates():
         with open("{}{}.pkl".format(TEMPLATES_FOLDER, object_name), 'wb') as f:
             pickle.dump(dictionary, f)
 
-        # Write all the scaled/rotated templates to files
-        # for scale, scaled in pyramid:
-        #     for r in ROTATIONS:
-        #         rotated = imutils.rotate(scaled, r)
-        #         output = open("{}{}/r{}-s{}.dat".format(TEMPLATES_FOLDER, object_name, r, scale), 'wb')
-        #         pickle.dump(rotated, output)
-        #         output.close()
-
     output = open(ROT_FILE, 'wb')
     pickle.dump(ROTATIONS, output)
     output.close()
@@ -94,6 +105,15 @@ def generate_templates():
 
 
 def template_matching(path="test_image_1.png"):
+    """
+    For each scaled/rotated template perform library template matching
+    Scale the score if the image is smaller (to give lower score
+    to smaller templates)
+    Record the best template and draw a rectangle around the result
+    :param path: The test image to perform template matching on
+    :return: ---
+    """
+
     test = cv.imread(TEST_IMAGES_FOLDER + path, cv.IMREAD_GRAYSCALE)
     test = cv.GaussianBlur(test, [9, 9], 1)
     test = white_to_black(test)
@@ -120,10 +140,13 @@ def template_matching(path="test_image_1.png"):
 
                 # cv.TM_SQDIFF_NORMED
                 # cv.TM_CCORR_NORMED
+                # Perform library template matching
                 result = cv.matchTemplate(test, template, cv.TM_CCORR_NORMED)
 
+                # Gets information about the best match
                 _, max_val, _, max_loc = cv.minMaxLoc(result)
 
+                # Scales the score so smaller images are less likely to be chosen
                 if scale == 6.25:
                     max_val = max_val * 0.5
                 elif scale == 12.5:
@@ -135,6 +158,7 @@ def template_matching(path="test_image_1.png"):
                 else:
                     max_val = max_val * 0.4
 
+                # Store the match if its better than previous matches
                 if max_val > best_val:
                     best_val = max_val
                     best_loc = max_loc
@@ -145,18 +169,17 @@ def template_matching(path="test_image_1.png"):
                 #     plt.imshow(template, cmap='gray')
                 #     plt.show()
 
+        # Filter out low scoring matches
         if best_val > 0.64:
             print("{}:\t\t\t{}".format(dictionary["object_name"], best_val))
+            top_left = best_loc
+            bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
+            cv.rectangle(test, top_left, bottom_right, 255, 2)
 
         # if dictionary["object_name"] == "gas-station":
         #     cv.rectangle(test, top_left, bottom_right, 255, 2)
         #     plt.imshow(test, cmap='gray')
         #     plt.show()
-
-        if best_val > 0.64:
-            top_left = best_loc
-            bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
-            cv.rectangle(test, top_left, bottom_right, 255, 2)
 
     plt.imshow(test, cmap='gray')
     plt.show()
