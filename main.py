@@ -194,6 +194,11 @@ def template_matching(path="test_image_1.png"):
 final_results = {}
 answers = {}
 
+total_icons = 0
+incorrect = 0
+correct = 0
+
+# for i in [10]:
 for i in range(1, 21):
     test_img = "test_image_{}.png".format(i)
     annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
@@ -205,6 +210,7 @@ for i in range(1, 21):
     with open(annotation, 'r') as reader:
         answers[test_img] = []
         for line in sorted(reader.readlines()):
+            total_icons += 1
             name, tl, br = re.split(r", (?=\()", line.rstrip())
             answers[test_img].append((name, tl, br))
             print("\t\t{} ->\t{}, {}".format(name, tl, br))
@@ -212,4 +218,15 @@ for i in range(1, 21):
     print("\tResults:")
 
     for name, val, top_l, bot_r in final_results[test_img]:
+        if len([item[0] for item in answers[test_img] if item[0] == name]) == 0:
+            incorrect += 1
+        else:
+            correct += 1
+
         print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
+
+print("\n----------------------\n")
+print("{} total icons\n{} correct template matches".format(total_icons, correct))
+print("{} incorrect template matches".format(incorrect))
+print("{:.2f}% accuracy".format(correct * 100 / total_icons))
+print("{:.2f}% false positives".format(incorrect * 100 / total_icons))
