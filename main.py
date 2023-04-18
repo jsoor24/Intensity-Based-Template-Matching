@@ -4,6 +4,7 @@ import matplotlib
 import imutils
 import matplotlib.pyplot as plt
 from helpers import *
+import re
 
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
@@ -67,7 +68,9 @@ def generate_templates():
     """
 
     if check_templates(ROT_FILE, SCA_FILE, TEMPLATES_FOLDER, TRAINING_FOLDER, ROTATIONS, OCTAVES):
+        print("Already have templates")
         return
+    print("Generating templates...")
 
     for file in os.listdir(TRAINING_FOLDER):
         # Read the image, grayscale the image then fill the background with black
@@ -102,6 +105,7 @@ def generate_templates():
     output = open(SCA_FILE, 'wb')
     pickle.dump(OCTAVES, output)
     output.close()
+    print("Done")
 
 
 def template_matching(path="test_image_1.png"):
@@ -109,14 +113,17 @@ def template_matching(path="test_image_1.png"):
     For each scaled/rotated template perform library template matching
     Scale the score if the image is smaller (to give lower score
     to smaller templates)
-    Record the best template and draw a rectangle around the result
+    Record the best template and add it to a list
     :param path: The test image to perform template matching on
-    :return: ---
+    :return: List of templates that matched as tuples:
+    (object name, matching score, top left, bottom right)
     """
 
     test = cv.imread(TEST_IMAGES_FOLDER + path, cv.IMREAD_GRAYSCALE)
     test = cv.GaussianBlur(test, [9, 9], 1)
     test = white_to_black(test)
+
+    matches = []
 
     for file in os.listdir(TEMPLATES_FOLDER):
         if file in ROT_FILE or file in SCA_FILE:
@@ -171,21 +178,38 @@ def template_matching(path="test_image_1.png"):
 
         # Filter out low scoring matches
         if best_val > 0.64:
-            print("{}:\t\t\t{}".format(dictionary["object_name"], best_val))
             top_left = best_loc
             bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
             cv.rectangle(test, top_left, bottom_right, 255, 2)
-
-        # if dictionary["object_name"] == "gas-station":
-        #     cv.rectangle(test, top_left, bottom_right, 255, 2)
-        #     plt.imshow(test, cmap='gray')
-        #     plt.show()
+            matches.append((dictionary["object_name"], best_val, top_left, bottom_right))
 
     plt.imshow(test, cmap='gray')
-    plt.show()
+    # plt.show()
+    plt.close()
+    return matches
 
 
-generate_templates()
+# generate_templates()
+
+final_results = {}
+answers = {}
 
 for i in range(1, 21):
-    template_matching("test_image_{}.png".format(i))
+    test_img = "test_image_{}.png".format(i)
+    annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
+
+    final_results[test_img] = template_matching(test_img)
+
+    print("\n" + test_img + "\n\tAnswers:")
+
+    with open(annotation, 'r') as reader:
+        answers[test_img] = []
+        for line in sorted(reader.readlines()):
+            name, tl, br = re.split(r", (?=\()", line.rstrip())
+            answers[test_img].append((name, tl, br))
+            print("\t\t{} ->\t{}, {}".format(name, tl, br))
+
+    print("\tResults:")
+
+    for name, val, top_l, bot_r in final_results[test_img]:
+        print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))

@@ -26,7 +26,6 @@ def check_templates(rot_file, sca_file, templates, training,
 
     if rotations == np.load(rot_file, allow_pickle=True) \
             and octaves == np.load(sca_file, allow_pickle=True):
-        print("Already have templates")
         return True
 
     return False
