@@ -5,6 +5,7 @@ import imutils
 import matplotlib.pyplot as plt
 from helpers import *
 import re
+from tqdm import tqdm
 
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
@@ -108,13 +109,15 @@ def generate_templates():
     print("Done")
 
 
-def template_matching(path="test_image_1.png"):
+def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cutoff=0.64):
     """
     For each scaled/rotated template perform library template matching
     Scale the score if the image is smaller (to give lower score
     to smaller templates)
     Record the best template and add it to a list
     :param path: The test image to perform template matching on
+    :param method: Method to use in library template matching
+    :param cutoff: The lower-bound of the value for a match
     :return: List of templates that matched as tuples:
     (object name, matching score, top left, bottom right)
     """
@@ -145,10 +148,14 @@ def template_matching(path="test_image_1.png"):
             for r, template in rotations.items():
                 w, h = template.shape[::-1]
 
-                # cv.TM_SQDIFF_NORMED
+                # cv.TM_CCOEFF
+                # cv.TM_CCOEFF_NORMED
+                # cv.TM_CCORR
                 # cv.TM_CCORR_NORMED
+                # cv.TM_SQDIFF
+                # cv.TM_SQDIFF_NORMED
                 # Perform library template matching
-                result = cv.matchTemplate(test, template, cv.TM_CCORR_NORMED)
+                result = cv.matchTemplate(test, template, eval(method))
 
                 # Gets information about the best match
                 _, max_val, _, max_loc = cv.minMaxLoc(result)
@@ -165,7 +172,7 @@ def template_matching(path="test_image_1.png"):
                 else:
                     max_val = max_val * 0.4
 
-                # Store the match if its better than previous matches
+                # Store the match if it's better than previous matches
                 if max_val > best_val:
                     best_val = max_val
                     best_loc = max_loc
@@ -177,7 +184,8 @@ def template_matching(path="test_image_1.png"):
                 #     plt.show()
 
         # Filter out low scoring matches
-        if best_val > 0.64:
+        # if best_val > 0.64:
+        if best_val > cutoff:
             top_left = best_loc
             bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
             cv.rectangle(test, top_left, bottom_right, 255, 2)
@@ -189,44 +197,58 @@ def template_matching(path="test_image_1.png"):
     return matches
 
 
+def test_template_matching():
+    methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
+    # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
+
+    for m, c in methods:
+        final_results = {}
+        answers = {}
+
+        total_icons = 0
+        incorrect_val = 0
+        correct_val = 0
+        incorrect = 0
+        correct = 0
+
+        # for i in [10]:
+        for i in range(1, 21):
+            test_img = "test_image_{}.png".format(i)
+            annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
+            final_results[test_img] = template_matching(test_img, m, c)
+
+            # print("\n" + test_img + "\n\tAnswers:")
+
+            with open(annotation, 'r') as reader:
+                answers[test_img] = []
+                for line in sorted(reader.readlines()):
+                    total_icons += 1
+                    name, tl, br = re.split(r", (?=\()", line.rstrip())
+                    answers[test_img].append((name, tl, br))
+                    # print("\t\t{} ->\t{}, {}".format(name, tl, br))
+
+            # print("\tResults:")
+
+            for name, val, top_l, bot_r in final_results[test_img]:
+                if len([item[0] for item in answers[test_img] if item[0] == name]) == 0:
+                    incorrect += 1
+                    incorrect_val += val
+                else:
+                    correct += 1
+                    correct_val += val
+
+                # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
+
+        print("\n----------------------\n")
+        print(m)
+        print("{} total icons\n{} correct template matches".format(total_icons, correct))
+        print("{:.2f}% accuracy".format(correct * 100 / total_icons))
+        if correct != 0:
+            print("{:.2f} average value when correct".format(correct_val / correct))
+        if incorrect != 0:
+            print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
+        print("{} false positives".format(incorrect))
+        print("{} missed".format(total_icons - correct))
+        print("{} cut-off".format(c))
+
 # generate_templates()
-
-final_results = {}
-answers = {}
-
-total_icons = 0
-incorrect = 0
-correct = 0
-
-# for i in [10]:
-for i in range(1, 21):
-    test_img = "test_image_{}.png".format(i)
-    annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
-
-    final_results[test_img] = template_matching(test_img)
-
-    print("\n" + test_img + "\n\tAnswers:")
-
-    with open(annotation, 'r') as reader:
-        answers[test_img] = []
-        for line in sorted(reader.readlines()):
-            total_icons += 1
-            name, tl, br = re.split(r", (?=\()", line.rstrip())
-            answers[test_img].append((name, tl, br))
-            print("\t\t{} ->\t{}, {}".format(name, tl, br))
-
-    print("\tResults:")
-
-    for name, val, top_l, bot_r in final_results[test_img]:
-        if len([item[0] for item in answers[test_img] if item[0] == name]) == 0:
-            incorrect += 1
-        else:
-            correct += 1
-
-        print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
-
-print("\n----------------------\n")
-print("{} total icons\n{} correct template matches".format(total_icons, correct))
-print("{} incorrect template matches".format(incorrect))
-print("{:.2f}% accuracy".format(correct * 100 / total_icons))
-print("{:.2f}% false positives".format(incorrect * 100 / total_icons))

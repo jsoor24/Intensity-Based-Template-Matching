@@ -14,7 +14,7 @@ def get_object_name(file):
     return file[4:len(file) - 4]
 
 
-# TODO Test if this works
+# TODO Test if this works (it still runs even when the folder is present)
 def check_templates(rot_file, sca_file, templates, training,
                     rotations, octaves):
     if not os.path.exists(rot_file) \
