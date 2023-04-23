@@ -224,8 +224,9 @@ def calculate_iou(tlA, brA, tlB, brB):
 
 
 def test_template_matching():
-    methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
+    # methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
     # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
+    methods = [('cv.TM_CCORR_NORMED', 0.625)]
 
     print("Testing template matching...")
 
@@ -234,6 +235,7 @@ def test_template_matching():
         answers = {}
 
         total_icons = 0
+        total_iou = 0
         incorrect_val = 0
         correct_val = 0
         incorrect = 0
@@ -262,12 +264,22 @@ def test_template_matching():
             # Parse the results from the template matching
             for name, val, top_l, bot_r in final_results[test_img]:
                 # See if the result is in the answers
-                if len([item[0] for item in answers[test_img] if item[0] == name]) == 0:
+                match = [item for item in answers[test_img] if item[0] == name]
+                if len(match) == 0:
                     incorrect += 1
                     incorrect_val += val
-                else:
-                    correct += 1
-                    correct_val += val
+                    continue
+
+                iou = calculate_iou(top_l, bot_r, match[1], match[2])
+
+                if iou < 0.5:
+                    incorrect += 1
+                    incorrect_val += val
+                    continue
+
+                correct += 1
+                correct_val += val
+                total_iou += iou
 
                 # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
 
@@ -275,12 +287,14 @@ def test_template_matching():
         print(m)
         print("{} total icons\n{} correct template matches".format(total_icons, correct))
         print("{:.2f}% accuracy".format(correct * 100 / total_icons))
+        print("{} false positives".format(incorrect))
+        print("{} missed".format(total_icons - correct))
+        if correct != 0:
+            print("{} average IoU".format(total_icons / correct))
         if correct != 0:
             print("{:.2f} average value when correct".format(correct_val / correct))
         if incorrect != 0:
             print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
-        print("{} false positives".format(incorrect))
-        print("{} missed".format(total_icons - correct))
         print("{} cut-off".format(c))
 
     print("Done")
