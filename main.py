@@ -18,6 +18,10 @@ OCTAVES = [1, 2, 3, 4]
 ROTATIONS = [0, 90, 180, 270]
 
 
+def main():
+    generate_templates()
+
+
 def create_gaussian_pyramid(img):
     """
     Takes an image and creates a Gaussian pyramid by blurring the
@@ -53,7 +57,6 @@ def create_gaussian_pyramid(img):
             result.append((get_scale_percentage(o), scaled))
         previous = scaled
 
-    print("Created Gaussian pyramid")
     return result
 
 
@@ -252,4 +255,6 @@ def test_template_matching():
         print("{} missed".format(total_icons - correct))
         print("{} cut-off".format(c))
 
-# generate_templates()
+
+if __name__ == "__main__":
+    main()

@@ -15,13 +15,11 @@ def get_object_name(file):
 
 
 # TODO Test if this works (it still runs even when the folder is present)
-def check_templates(rot_file, sca_file, templates, training,
-                    rotations, octaves):
-    if not os.path.exists(rot_file) \
-            or not os.path.exists(sca_file):
+def check_templates(rot_file, sca_file, templates, training, rotations, octaves):
+    if not os.path.exists(rot_file) or not os.path.exists(sca_file):
         return False
 
-    if len(os.listdir(templates)) - 2 != len(training):
+    if len(os.listdir(templates)) - 2 != len(os.listdir(training)):
         return False
 
     if rotations == np.load(rot_file, allow_pickle=True) \
