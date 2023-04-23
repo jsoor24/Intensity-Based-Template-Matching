@@ -81,8 +81,8 @@ def generate_templates():
 
     for file in os.listdir(TRAINING_FOLDER):
         # Read the image, grayscale the image then fill the background with black
-        image = cv.imread(TRAINING_FOLDER + file)
-        image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+        image = cv.imread(TRAINING_FOLDER + file, cv.IMREAD_GRAYSCALE)
+        # image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
         image = white_to_black(image)
 
         object_name = get_object_name(file)
@@ -145,6 +145,8 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
         best_loc = 0
         b_h = 0
         b_w = 0
+        b_octave = 0
+        b_rotation = 0
 
         for o in OCTAVES:
             scale = get_scale_percentage(o)
@@ -154,12 +156,6 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
             for r, template in rotations.items():
                 w, h = template.shape[::-1]
 
-                # cv.TM_CCOEFF
-                # cv.TM_CCOEFF_NORMED
-                # cv.TM_CCORR
-                # cv.TM_CCORR_NORMED
-                # cv.TM_SQDIFF
-                # cv.TM_SQDIFF_NORMED
                 # Perform library template matching
                 result = cv.matchTemplate(test, template, eval(method))
 
@@ -184,6 +180,8 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
                     best_loc = max_loc
                     b_h = h
                     b_w = w
+                    b_octave = o
+                    b_rotation = r
 
                 # if dictionary["object_name"] == "windmill":
                 #     plt.imshow(template, cmap='gray')
@@ -193,9 +191,25 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
         if best_val > cutoff:
             top_left = best_loc
             bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
-            matches.append((dictionary["object_name"], best_val, top_left, bottom_right))
+            similarity = histogram_matching(test[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                            dictionary[get_scale_percentage(b_octave)][b_rotation])
+            if similarity > 0.9:
+                matches.append((dictionary["object_name"], best_val, top_left, bottom_right))
 
     return matches
+
+
+def histogram_matching(test_region, template):
+    # plt.subplot(121), plt.imshow(test_img, cmap='gray')
+    # plt.subplot(122), plt.imshow(template, cmap='gray')
+    # plt.show()
+    # plt.close()
+
+    template_hist = cv.calcHist([template], [0], None, [256], [0, 256])
+    img_hist = cv.calcHist([test_region], [0], None, [256], [0, 256])
+    similarity = cv.compareHist(template_hist, img_hist, cv.HISTCMP_CORREL)
+
+    return 1
 
 
 # https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation
@@ -230,7 +244,7 @@ def calculate_iou(tlA, brA, tlB, brB):
     return iou
 
 
-def toInt(var):
+def to_int(var):
     """
     Takes the string "(123, 456)"
     and returns the tuple (123, 456)
@@ -297,7 +311,7 @@ def test_template_matching():
 
                 # Match
                 match = match[0]
-                iou = calculate_iou(top_l, bot_r, toInt(match[1]), toInt(match[2]))
+                iou = calculate_iou(top_l, bot_r, to_int(match[1]), to_int(match[2]))
 
                 # Incorrect
                 if iou < 0.5:
@@ -317,7 +331,7 @@ def test_template_matching():
                            0.4, [0, 255, 0])
 
             plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
-            plt.show()
+            # plt.show()
             plt.close()
 
             # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
