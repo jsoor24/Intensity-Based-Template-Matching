@@ -194,12 +194,12 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
         if best_val > cutoff:
             top_left = best_loc
             bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
-            cv.rectangle(test, top_left, bottom_right, 255, 2)
+            # cv.rectangle(test, top_left, bottom_right, 255, 2)
             matches.append((dictionary["object_name"], best_val, top_left, bottom_right))
 
-    plt.imshow(test, cmap='gray')
-    plt.show()
-    plt.close()
+    # plt.imshow(test, cmap='gray')
+    # plt.show()
+    # plt.close()
     return matches
 
 
@@ -250,42 +250,57 @@ def test_template_matching():
         # Loop through all test images
         # for i in [10]:
         for i in range(1, 21):
-            test_img = "test_image_{}.png".format(i)
+            test_img_path = "test_image_{}.png".format(i)
             annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
-            final_results[test_img] = template_matching(test_img, m, c)
+            final_results[test_img_path] = template_matching(test_img_path, m, c)
+            test_img = cv.imread(TEST_IMAGES_FOLDER +    test_img_path)
 
             # print("\n" + test_img + "\n\tAnswers:")
 
             # Read in the ground truth answers
             with open(annotation, 'r') as reader:
-                answers[test_img] = []
+                answers[test_img_path] = []
                 for line in sorted(reader.readlines()):
                     total_icons += 1
                     name, tl, br = re.split(r", (?=\()", line.rstrip())
-                    answers[test_img].append((name, tl, br))
+                    answers[test_img_path].append((name, tl, br))
                     # print("\t\t{} ->\t{}, {}".format(name, tl, br))
 
             # print("\tResults:")
 
             # Parse the results from the template matching
-            for name, val, top_l, bot_r in final_results[test_img]:
+            for name, val, top_l, bot_r in final_results[test_img_path]:
                 # See if the result is in the answers
-                match = [item for item in answers[test_img] if item[0] == name]
+                match = [item for item in answers[test_img_path] if item[0] == name]
+
+                # No match
                 if len(match) == 0:
                     incorrect += 1
                     incorrect_val += val
+                    cv.rectangle(test_img, top_l, bot_r, [0, 0, 255], 2)
                     continue
+
+                # Match
                 match = match[0]
                 iou = calculate_iou(top_l, bot_r, toInt(match[1]), toInt(match[2]))
 
+                # Incorrect
                 if iou < 0.5:
                     incorrect += 1
                     incorrect_val += val
+                    cv.rectangle(test_img, top_l, bot_r, [0, 0, 255], 2)
                     continue
 
+                # Correct
                 correct += 1
                 correct_val += val
                 total_iou += iou
+                cv.rectangle(test_img, top_l, bot_r, [0, 255, 0], 2)
+
+            # plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
+            plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
+            plt.show()
+            plt.close()
 
                 # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
 
