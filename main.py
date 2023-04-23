@@ -10,6 +10,7 @@ from tqdm import tqdm
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
 TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
+
 TEMPLATES_FOLDER = "templates/"
 ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
 SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
@@ -20,6 +21,7 @@ ROTATIONS = [0, 90, 180, 270]
 
 def main():
     generate_templates()
+    test_template_matching()
 
 
 def create_gaussian_pyramid(img):
@@ -127,7 +129,7 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
     """
 
     test = cv.imread(TEST_IMAGES_FOLDER + path, cv.IMREAD_GRAYSCALE)
-    test = cv.GaussianBlur(test, [9, 9], 1)
+    # test = cv.GaussianBlur(test, [9, 9], 1)
     test = white_to_black(test)
 
     matches = []
@@ -196,14 +198,36 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
             matches.append((dictionary["object_name"], best_val, top_left, bottom_right))
 
     plt.imshow(test, cmap='gray')
-    # plt.show()
+    plt.show()
     plt.close()
     return matches
+
+
+# https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation
+def calculate_iou(tlA, brA, tlB, brB):
+    # Calculate the coordinates of the intersection box
+    x_left = max(tlA[0], tlB[0])
+    y_top = max(tlA[1], tlB[1])
+    x_right = min(brA[0], brB[0])
+    y_bottom = min(brA[1], brB[1])
+
+    if x_right < x_left or y_bottom < y_top:
+        return 0.0
+
+    intersection_area = (x_right - x_left) * (y_bottom - y_top)
+
+    areaA = (brA[0] - tlA[0]) * (brA[1] - tlA[1])
+    areaB = (brB[0] - tlB[0]) * (brB[1] - tlB[1])
+
+    iou = intersection_area / float(areaA + areaB - intersection_area)
+    return iou
 
 
 def test_template_matching():
     methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
     # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
+
+    print("Testing template matching...")
 
     for m, c in methods:
         final_results = {}
@@ -215,6 +239,7 @@ def test_template_matching():
         incorrect = 0
         correct = 0
 
+        # Loop through all test images
         # for i in [10]:
         for i in range(1, 21):
             test_img = "test_image_{}.png".format(i)
@@ -223,6 +248,7 @@ def test_template_matching():
 
             # print("\n" + test_img + "\n\tAnswers:")
 
+            # Read in the ground truth answers
             with open(annotation, 'r') as reader:
                 answers[test_img] = []
                 for line in sorted(reader.readlines()):
@@ -233,7 +259,9 @@ def test_template_matching():
 
             # print("\tResults:")
 
+            # Parse the results from the template matching
             for name, val, top_l, bot_r in final_results[test_img]:
+                # See if the result is in the answers
                 if len([item[0] for item in answers[test_img] if item[0] == name]) == 0:
                     incorrect += 1
                     incorrect_val += val
@@ -254,6 +282,8 @@ def test_template_matching():
         print("{} false positives".format(incorrect))
         print("{} missed".format(total_icons - correct))
         print("{} cut-off".format(c))
+
+    print("Done")
 
 
 if __name__ == "__main__":
