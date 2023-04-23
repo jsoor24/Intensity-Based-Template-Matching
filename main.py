@@ -53,6 +53,7 @@ def create_gaussian_pyramid(img):
             result.append((get_scale_percentage(o), scaled))
         previous = scaled
 
+    print("Created Gaussian pyramid")
     return result
 
 
