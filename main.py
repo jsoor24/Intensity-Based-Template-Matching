@@ -190,21 +190,28 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
                 #     plt.show()
 
         # Filter out low scoring matches
-        # if best_val > 0.64:
         if best_val > cutoff:
             top_left = best_loc
             bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
-            # cv.rectangle(test, top_left, bottom_right, 255, 2)
             matches.append((dictionary["object_name"], best_val, top_left, bottom_right))
 
-    # plt.imshow(test, cmap='gray')
-    # plt.show()
-    # plt.close()
     return matches
 
 
 # https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation
+# Used StackOverflow post to understand out how to compute intersection over union
 def calculate_iou(tlA, brA, tlB, brB):
+    """
+    Calculates the intersection over union of two bounding boxes
+    One of the bounding boxes is the result from template matching
+    The other is the ground truth from the annotations
+    :param tlA: Top left of BB A
+    :param brA: Bottom right of BB A
+    :param tlB: Top left of BB B
+    :param brB: Bottom right of BB B
+    :return: The IoU score
+    """
+
     # Calculate the coordinates of the intersection box
     x_left = max(tlA[0], tlB[0])
     y_top = max(tlA[1], tlB[1])
@@ -224,6 +231,12 @@ def calculate_iou(tlA, brA, tlB, brB):
 
 
 def toInt(var):
+    """
+    Takes the string "(123, 456)"
+    and returns the tuple (123, 456)
+    :param var: String to parse to integer tuple
+    :return: The integer tuple
+    """
     var = var.replace("(", "")
     var = var.replace(")", "")
     return tuple([int(n) for n in var.split(", ")])
@@ -253,7 +266,7 @@ def test_template_matching():
             test_img_path = "test_image_{}.png".format(i)
             annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
             final_results[test_img_path] = template_matching(test_img_path, m, c)
-            test_img = cv.imread(TEST_IMAGES_FOLDER +    test_img_path)
+            test_img = cv.imread(TEST_IMAGES_FOLDER + test_img_path)
 
             # print("\n" + test_img + "\n\tAnswers:")
 
@@ -278,7 +291,8 @@ def test_template_matching():
                     incorrect += 1
                     incorrect_val += val
                     cv.rectangle(test_img, top_l, bot_r, [0, 0, 255], 2)
-                    cv.putText(test_img, name, (bot_r[0] - 10, bot_r[1] + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3, [0, 0, 255])
+                    cv.putText(test_img, name, (bot_r[0] - 10, bot_r[1] + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3,
+                               [0, 0, 255])
                     continue
 
                 # Match
@@ -290,7 +304,8 @@ def test_template_matching():
                     incorrect += 1
                     incorrect_val += val
                     cv.rectangle(test_img, top_l, bot_r, [0, 0, 255], 2)
-                    cv.putText(test_img, name, (bot_r[0] - 10, bot_r[1] + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3, [0, 0, 255])
+                    cv.putText(test_img, name, (bot_r[0] - 10, bot_r[1] + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3,
+                               [0, 0, 255])
                     continue
 
                 # Correct
@@ -298,14 +313,14 @@ def test_template_matching():
                 correct_val += val
                 total_iou += iou
                 cv.rectangle(test_img, top_l, bot_r, [0, 255, 0], 2)
-                cv.putText(test_img, name, (top_l[0], top_l[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.4, [0, 255, 0])
+                cv.putText(test_img, "{}, {:.2f}".format(name, iou), (top_l[0], top_l[1] - 10), cv.FONT_HERSHEY_SIMPLEX,
+                           0.4, [0, 255, 0])
 
-            # plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
             plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
             plt.show()
             plt.close()
 
-                # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
+            # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
 
         print("\n----------------------\n")
         print(m)
@@ -314,7 +329,7 @@ def test_template_matching():
         print("{} false positives".format(incorrect))
         print("{} missed".format(total_icons - correct))
         if correct != 0:
-            print("{} average IoU".format(total_icons / correct))
+            print("{:.3f} average IoU".format(total_iou / correct))
         if correct != 0:
             print("{:.2f} average value when correct".format(correct_val / correct))
         if incorrect != 0:
