@@ -223,6 +223,12 @@ def calculate_iou(tlA, brA, tlB, brB):
     return iou
 
 
+def toInt(var):
+    var = var.replace("(", "")
+    var = var.replace(")", "")
+    return tuple([int(n) for n in var.split(", ")])
+
+
 def test_template_matching():
     # methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
     # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
@@ -269,8 +275,8 @@ def test_template_matching():
                     incorrect += 1
                     incorrect_val += val
                     continue
-
-                iou = calculate_iou(top_l, bot_r, match[1], match[2])
+                match = match[0]
+                iou = calculate_iou(top_l, bot_r, toInt(match[1]), toInt(match[2]))
 
                 if iou < 0.5:
                     incorrect += 1
