@@ -278,6 +278,7 @@ def test_template_matching():
                     incorrect += 1
                     incorrect_val += val
                     cv.rectangle(test_img, top_l, bot_r, [0, 0, 255], 2)
+                    cv.putText(test_img, name, (bot_r[0] - 10, bot_r[1] + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3, [0, 0, 255])
                     continue
 
                 # Match
@@ -289,6 +290,7 @@ def test_template_matching():
                     incorrect += 1
                     incorrect_val += val
                     cv.rectangle(test_img, top_l, bot_r, [0, 0, 255], 2)
+                    cv.putText(test_img, name, (bot_r[0] - 10, bot_r[1] + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3, [0, 0, 255])
                     continue
 
                 # Correct
@@ -296,6 +298,7 @@ def test_template_matching():
                 correct_val += val
                 total_iou += iou
                 cv.rectangle(test_img, top_l, bot_r, [0, 255, 0], 2)
+                cv.putText(test_img, name, (top_l[0], top_l[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.4, [0, 255, 0])
 
             # plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
             plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
