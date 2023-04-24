@@ -50,3 +50,47 @@ def create_gaussian_pyramid_image(img, result):
         i_row += n_rows
 
     return comp_img
+
+
+# https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation
+# Used StackOverflow post to understand out how to compute intersection over union
+def calculate_iou(tlA, brA, tlB, brB):
+    """
+    Calculates the intersection over union of two bounding boxes
+    One of the bounding boxes is the result from template matching
+    The other is the ground truth from the annotations
+    :param tlA: Top left of BB A
+    :param brA: Bottom right of BB A
+    :param tlB: Top left of BB B
+    :param brB: Bottom right of BB B
+    :return: The IoU score
+    """
+
+    # Calculate the coordinates of the intersection box
+    x_left = max(tlA[0], tlB[0])
+    y_top = max(tlA[1], tlB[1])
+    x_right = min(brA[0], brB[0])
+    y_bottom = min(brA[1], brB[1])
+
+    if x_right < x_left or y_bottom < y_top:
+        return 0.0
+
+    intersection_area = (x_right - x_left) * (y_bottom - y_top)
+
+    areaA = (brA[0] - tlA[0]) * (brA[1] - tlA[1])
+    areaB = (brB[0] - tlB[0]) * (brB[1] - tlB[1])
+
+    iou = intersection_area / float(areaA + areaB - intersection_area)
+    return iou
+
+
+def to_int(var):
+    """
+    Takes the string "(123, 456)"
+    and returns the tuple (123, 456)
+    :param var: String to parse to integer tuple
+    :return: The integer tuple
+    """
+    var = var.replace("(", "")
+    var = var.replace(")", "")
+    return tuple([int(n) for n in var.split(", ")])

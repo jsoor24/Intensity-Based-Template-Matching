@@ -7,9 +7,10 @@ from helpers import *
 import re
 from tqdm import tqdm
 
-TRAINING_FOLDER = "Task2Dataset/Training/png/"
-TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
-TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
+DATASET = "Task2Dataset/"
+TRAINING_FOLDER = DATASET + "Training/png/"
+TEST_IMAGES_FOLDER = DATASET + "TestWithoutRotations/images/"
+TEST_ANNOTATIONS_FOLDER = DATASET + "TestWithoutRotations/annotations/"
 
 TEMPLATES_FOLDER = "templates/"
 ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
@@ -217,51 +218,12 @@ def histogram_matching(test_region, template):
     return 1
 
 
-# https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation
-# Used StackOverflow post to understand out how to compute intersection over union
-def calculate_iou(tlA, brA, tlB, brB):
-    """
-    Calculates the intersection over union of two bounding boxes
-    One of the bounding boxes is the result from template matching
-    The other is the ground truth from the annotations
-    :param tlA: Top left of BB A
-    :param brA: Bottom right of BB A
-    :param tlB: Top left of BB B
-    :param brB: Bottom right of BB B
-    :return: The IoU score
-    """
-
-    # Calculate the coordinates of the intersection box
-    x_left = max(tlA[0], tlB[0])
-    y_top = max(tlA[1], tlB[1])
-    x_right = min(brA[0], brB[0])
-    y_bottom = min(brA[1], brB[1])
-
-    if x_right < x_left or y_bottom < y_top:
-        return 0.0
-
-    intersection_area = (x_right - x_left) * (y_bottom - y_top)
-
-    areaA = (brA[0] - tlA[0]) * (brA[1] - tlA[1])
-    areaB = (brB[0] - tlB[0]) * (brB[1] - tlB[1])
-
-    iou = intersection_area / float(areaA + areaB - intersection_area)
-    return iou
-
-
-def to_int(var):
-    """
-    Takes the string "(123, 456)"
-    and returns the tuple (123, 456)
-    :param var: String to parse to integer tuple
-    :return: The integer tuple
-    """
-    var = var.replace("(", "")
-    var = var.replace(")", "")
-    return tuple([int(n) for n in var.split(", ")])
-
-
 def test_template_matching():
+    """
+    Performs template matching on all the available test images
+    Note: Assumes test files are named "test_image_i.png"
+    :return: ---
+    """
     # methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
     # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
     methods = [('cv.TM_CCORR_NORMED', 0.625)]
