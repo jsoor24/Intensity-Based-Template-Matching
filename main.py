@@ -226,7 +226,8 @@ def test_template_matching():
     """
     # methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
     # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
-    methods = [('cv.TM_CCORR_NORMED', 0.625)]
+    # methods = [('cv.TM_CCORR_NORMED', 0.625)]
+    methods = [('cv.TM_CCORR_NORMED', 0.55)]
 
     print("Testing template matching...")
 
