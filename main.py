@@ -215,7 +215,7 @@ def histogram_matching(test_region, template):
     img_hist = cv.calcHist([test_region], [0], None, [256], [0, 256])
     similarity = cv.compareHist(template_hist, img_hist, cv.HISTCMP_CORREL)
 
-    return 1
+    return similarity
 
 
 def test_template_matching():
