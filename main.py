@@ -37,7 +37,7 @@ def create_gaussian_pyramid(img):
     previous = img
     maximum = max(OCTAVES)
 
-    for o in range(0, maximum + 1):
+    for o in range(1, maximum + 1):
         # Apply Gaussian filter
         blurred = cv.GaussianBlur(previous, [5, 5], 0.5)
 
@@ -59,6 +59,11 @@ def create_gaussian_pyramid(img):
             result.append((get_scale_percentage(o), scaled))
         previous = scaled
 
+    # pyramid = create_gaussian_pyramid_image(img, result)
+    # cv.imwrite("pyramidImage.jpg", pyramid)
+    # plt.imshow(pyramid, cmap='gray')
+    # plt.show()
+    # plt.close()
     return result
 
 
