@@ -25,7 +25,7 @@ ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
 SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
 
 OCTAVES = [1, 2, 3]
-ROTATIONS = [0]
+ROTATIONS = [0, 90, 180, 270]
 
 metrics = {}
 
@@ -90,16 +90,20 @@ def generate_templates():
     :return: ---
     """
 
+    # No need to generate templates if they're already there
     if check_templates(ROT_FILE, SCA_FILE, TEMPLATES_FOLDER, TRAINING_FOLDER, ROTATIONS, OCTAVES):
         print("Already have templates")
         return
     print("Generating templates...")
     start_time = time.time()
 
+    # Check if there is already a folder for templates for this object
+    if not os.path.exists(TEMPLATES_FOLDER):
+        os.makedirs(TEMPLATES_FOLDER)
+
     for file in os.listdir(TRAINING_FOLDER):
-        # Read the image, grayscale the image then fill the background with black
+        # Read the image as grayscale, then fill the background with black
         image = cv.imread(TRAINING_FOLDER + file, cv.IMREAD_GRAYSCALE)
-        # image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
         image = white_to_black(image)
 
         object_name = get_object_name(file)
@@ -107,10 +111,7 @@ def generate_templates():
         # Create the gaussian pyramid and rotations for each of the scaled images
         pyramid = create_gaussian_pyramid(image)
 
-        # Check if there is already a folder for templates for this object
-        if not os.path.exists(TEMPLATES_FOLDER):
-            os.makedirs(TEMPLATES_FOLDER)
-
+        # Create the dictionary to hold all scaled/rotated templates
         dictionary = {"object_name": object_name}
 
         for scale, scaled in pyramid:
@@ -119,9 +120,11 @@ def generate_templates():
                 rotations[r] = imutils.rotate(scaled, r)
             dictionary[scale] = rotations
 
+        # Write to a file
         with open("{}{}.pkl".format(TEMPLATES_FOLDER, object_name), 'wb') as f:
             pickle.dump(dictionary, f)
 
+    # Write 'metadata' files
     output = open(ROT_FILE, 'wb')
     pickle.dump(ROTATIONS, output)
     output.close()
@@ -149,7 +152,6 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
     """
 
     test = cv.imread(TEST_IMAGES_FOLDER + path, cv.IMREAD_GRAYSCALE)
-    # test = cv.GaussianBlur(test, [9, 9], 1)
     test = white_to_black(test)
 
     matches = []
@@ -161,18 +163,15 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
         with open("{}{}".format(TEMPLATES_FOLDER, file), 'rb') as f:
             dictionary = pickle.load(f)
 
-        best_val = 0
-        best_loc = 0
-        b_h = 0
-        b_w = 0
-        b_octave = 0
-        b_rotation = 0
+        best_val = best_loc = b_h = b_w = b_octave = b_rotation = 0
 
+        # Loop through the scales
         for o in OCTAVES:
             scale = get_scale_percentage(o)
 
             rotations = dictionary[scale]
 
+            # Loop through the rotations
             for r, template in rotations.items():
                 w, h = template.shape[::-1]
 
@@ -203,14 +202,11 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
                     b_octave = o
                     b_rotation = r
 
-                # if dictionary["object_name"] == "windmill":
-                #     plt.imshow(template, cmap='gray')
-                #     plt.show()
-
         # Filter out low scoring matches
         if best_val > cutoff:
             top_left = best_loc
             bottom_right = (top_left[0] + b_w, top_left[1] + b_h)
+            # Perform histogram matching to see if it is a good match
             similarity = histogram_matching(test[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
                                             dictionary[get_scale_percentage(b_octave)][b_rotation])
             if similarity > 0.9:
@@ -220,6 +216,13 @@ def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cuto
 
 
 def histogram_matching(test_region, template):
+    """
+    Performs histogram matching on an area of the test image and
+    the template that it matched to
+    :param test_region: The region of the test image where there may be a match
+    :param template: The template that matched
+    :return: The histogram similarity score
+    """
     # plt.subplot(121), plt.imshow(test_img, cmap='gray')
     # plt.subplot(122), plt.imshow(template, cmap='gray')
     # plt.show()
@@ -238,15 +241,12 @@ def test_template_matching(t):
     Note: Assumes test files are named "test_image_i.png"
     :return: ---
     """
-    # methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
-    # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
-    # methods = [('cv.TM_CCORR_NORMED', 0.625)]
-    # methods = [('cv.TM_CCORR_NORMED', 0.55)]
 
     methods = [('cv.TM_CCOEFF_NORMED', 0.48)]
 
     print("Testing template matching...")
 
+    # For loop for easier testing of methods/cut-offs
     for m, c in methods:
         final_results = {}
         answers = {}
@@ -254,12 +254,15 @@ def test_template_matching(t):
         total_time = total_icons = total_iou = incorrect_val = correct_val = incorrect = correct = 0
 
         # Loop through all test images
-        # for i in [10]:
         for i in range(1, 21):
             start_time = time.time()
+
+            # Assumes test image files are named "test_image_i.png"
+            # and that annotation files are named "test_image_i<FILE_EXTENSION CONST>"
             test_img_path = "test_image_{}.png".format(i)
             annotation = "{}test_image_{}{}".format(TEST_ANNOTATIONS_FOLDER, i, ANNOTATIONS_FILE_EXTENSION)
             final_results[test_img_path] = template_matching(test_img_path, m, c)
+            # Get a 'fresh' test image to display results on
             test_img = cv.imread(TEST_IMAGES_FOLDER + test_img_path)
 
             # print("\n" + test_img + "\n\tAnswers:")
@@ -280,7 +283,7 @@ def test_template_matching(t):
                 # See if the result is in the answers
                 match = [item for item in answers[test_img_path] if item[0] == name]
 
-                # No match
+                # No match with ground truth
                 if len(match) == 0:
                     incorrect += 1
                     incorrect_val += val
@@ -289,11 +292,11 @@ def test_template_matching(t):
                                [0, 0, 255])
                     continue
 
-                # Match
+                # Match with ground truth
                 match = match[0]
                 iou = calculate_iou(top_l, bot_r, to_int(match[1]), to_int(match[2]))
 
-                # Incorrect
+                # Incorrect match (IoU too low)
                 if iou < 0.5:
                     incorrect += 1
                     incorrect_val += val
@@ -302,7 +305,7 @@ def test_template_matching(t):
                                [0, 0, 255])
                     continue
 
-                # Correct
+                # Correct match
                 correct += 1
                 correct_val += val
                 total_iou += iou
@@ -311,12 +314,15 @@ def test_template_matching(t):
                            0.4, [0, 255, 0])
 
             total_time += time.time() - start_time
+
+            # Show bounding boxes
             plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
             # plt.show()
             plt.close()
 
             # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
 
+        # Print metrics
         print("\n----------------------\n")
         print(m)
         print("{} total icons\n{} correct template matches".format(total_icons, correct))
