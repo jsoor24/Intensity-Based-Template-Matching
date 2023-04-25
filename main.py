@@ -227,9 +227,13 @@ def test_template_matching():
     # methods = [('cv.TM_CCOEFF_NORMED', 0.51), ('cv.TM_CCORR_NORMED', 0.625)]
     # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR', 'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
     # methods = [('cv.TM_CCORR_NORMED', 0.625)]
-    methods = [('cv.TM_CCORR_NORMED', 0.55)]
+    # methods = [('cv.TM_CCORR_NORMED', 0.55)]
+
+    methods = [('cv.TM_CCOEFF_NORMED', 0.48)]
 
     print("Testing template matching...")
+
+    metrics = {"cv.TM_CCORR_NORMED": {}, "cv.TM_CCOEFF_NORMED": {}}
 
     for m, c in methods:
         final_results = {}
@@ -318,7 +322,14 @@ def test_template_matching():
             print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
         print("{} cut-off".format(c))
 
+        # correct, accuracy, false positives,
+        metrics[m][c] = [correct, correct * 100 / total_icons, incorrect]
+
     print("Done")
+
+    output = open("results.pkl", 'wb')
+    pickle.dump(metrics, output)
+    output.close()
 
 
 if __name__ == "__main__":
