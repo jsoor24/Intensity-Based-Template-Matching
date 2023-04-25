@@ -6,17 +6,26 @@ import matplotlib.pyplot as plt
 from helpers import *
 import time
 
-DATASET = "Task2Dataset/"
-TRAINING_FOLDER = DATASET + "Training/png/"
-TEST_IMAGES_FOLDER = DATASET + "TestWithoutRotations/images/"
-TEST_ANNOTATIONS_FOLDER = DATASET + "TestWithoutRotations/annotations/"
+# Where to find the training images
+TRAINING_FOLDER = "Task2Dataset/Training/png/"
 
+# Where to find the test images
+# TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
+TEST_IMAGES_FOLDER = "Task3Dataset/images/"
+
+# Where to find the answers
+# TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
+TEST_ANNOTATIONS_FOLDER = "Task3Dataset/annotations/"
+# ANNOTATIONS_FILE_EXTENSION = ".txt"
+ANNOTATIONS_FILE_EXTENSION = ".csv"
+
+# Where to write the templates
 TEMPLATES_FOLDER = "templates/"
 ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
 SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
 
 OCTAVES = [1, 2, 3]
-ROTATIONS = [0, 90, 180, 270]
+ROTATIONS = [0]
 
 metrics = {}
 
@@ -249,7 +258,7 @@ def test_template_matching(t):
         for i in range(1, 21):
             start_time = time.time()
             test_img_path = "test_image_{}.png".format(i)
-            annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
+            annotation = "{}test_image_{}{}".format(TEST_ANNOTATIONS_FOLDER, i, ANNOTATIONS_FILE_EXTENSION)
             final_results[test_img_path] = template_matching(test_img_path, m, c)
             test_img = cv.imread(TEST_IMAGES_FOLDER + test_img_path)
 
