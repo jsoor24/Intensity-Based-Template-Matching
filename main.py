@@ -1,11 +1,10 @@
 import pickle
+import re
 import cv2 as cv
-import matplotlib
 import imutils
 import matplotlib.pyplot as plt
 from helpers import *
-import re
-from tqdm import tqdm
+import time
 
 DATASET = "Task2Dataset/"
 TRAINING_FOLDER = DATASET + "Training/png/"
@@ -16,13 +15,15 @@ TEMPLATES_FOLDER = "templates/"
 ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
 SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
 
-OCTAVES = [1, 2, 3, 4]
+OCTAVES = [1, 2, 3]
 ROTATIONS = [0, 90, 180, 270]
+
+metrics = {}
 
 
 def main():
-    generate_templates()
-    test_template_matching()
+    t = generate_templates()
+    test_template_matching(t)
 
 
 def create_gaussian_pyramid(img):
@@ -84,6 +85,7 @@ def generate_templates():
         print("Already have templates")
         return
     print("Generating templates...")
+    start_time = time.time()
 
     for file in os.listdir(TRAINING_FOLDER):
         # Read the image, grayscale the image then fill the background with black
@@ -118,7 +120,10 @@ def generate_templates():
     output = open(SCA_FILE, 'wb')
     pickle.dump(OCTAVES, output)
     output.close()
-    print("Done")
+
+    total_time = time.time() - start_time
+    print("Done in {:.2f}s".format(total_time))
+    return total_time
 
 
 def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cutoff=0.64):
@@ -218,7 +223,7 @@ def histogram_matching(test_region, template):
     return similarity
 
 
-def test_template_matching():
+def test_template_matching(t):
     """
     Performs template matching on all the available test images
     Note: Assumes test files are named "test_image_i.png"
@@ -233,22 +238,16 @@ def test_template_matching():
 
     print("Testing template matching...")
 
-    metrics = {"cv.TM_CCORR_NORMED": {}, "cv.TM_CCOEFF_NORMED": {}}
-
     for m, c in methods:
         final_results = {}
         answers = {}
 
-        total_icons = 0
-        total_iou = 0
-        incorrect_val = 0
-        correct_val = 0
-        incorrect = 0
-        correct = 0
+        total_time = total_icons = total_iou = incorrect_val = correct_val = incorrect = correct = 0
 
         # Loop through all test images
         # for i in [10]:
         for i in range(1, 21):
+            start_time = time.time()
             test_img_path = "test_image_{}.png".format(i)
             annotation = "{}test_image_{}.txt".format(TEST_ANNOTATIONS_FOLDER, i)
             final_results[test_img_path] = template_matching(test_img_path, m, c)
@@ -302,6 +301,7 @@ def test_template_matching():
                 cv.putText(test_img, "{}, {:.2f}".format(name, iou), (top_l[0], top_l[1] - 10), cv.FONT_HERSHEY_SIMPLEX,
                            0.4, [0, 255, 0])
 
+            total_time += time.time() - start_time
             plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
             # plt.show()
             plt.close()
@@ -321,11 +321,12 @@ def test_template_matching():
         if incorrect != 0:
             print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
         print("{} cut-off".format(c))
+        print("{:.2f}s total time\n{:.2f}s average time (assuming 20 tests)".format(total_time, total_time / 20))
 
-        # correct, accuracy, false positives,
-        metrics[m][c] = [correct, correct * 100 / total_icons, incorrect]
+        # correct, accuracy, false positives, total_time, training_time
+        metrics[max(OCTAVES)] = [correct, correct * 100 / total_icons, incorrect, total_time, t]
 
-    print("Done")
+    print("Done\n\n")
 
     output = open("results.pkl", 'wb')
     pickle.dump(metrics, output)
