@@ -10,14 +10,14 @@ import time
 TRAINING_FOLDER = "Task2Dataset/Training/png/"
 
 # Where to find the test images
-# TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
-TEST_IMAGES_FOLDER = "Task3Dataset/images/"
+TEST_IMAGES_FOLDER = "Task2Dataset/TestWithoutRotations/images/"
+# TEST_IMAGES_FOLDER = "Task3Dataset/images/"
 
 # Where to find the answers
-# TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
-TEST_ANNOTATIONS_FOLDER = "Task3Dataset/annotations/"
-# ANNOTATIONS_FILE_EXTENSION = ".txt"
-ANNOTATIONS_FILE_EXTENSION = ".csv"
+TEST_ANNOTATIONS_FOLDER = "Task2Dataset/TestWithoutRotations/annotations/"
+# TEST_ANNOTATIONS_FOLDER = "Task3Dataset/annotations/"
+ANNOTATIONS_FILE_EXTENSION = ".txt"
+# ANNOTATIONS_FILE_EXTENSION = ".csv"
 
 # Where to write the templates
 TEMPLATES_FOLDER = "templates/"
@@ -333,13 +333,13 @@ def test_template_matching(t):
         print("{:.2f}s total time\n{:.2f}s average time (assuming 20 tests)".format(total_time, total_time / 20))
 
         # correct, accuracy, false positives, total_time, training_time
-        metrics[max(OCTAVES)] = [correct, correct * 100 / total_icons, incorrect, total_time, t]
+        # metrics[ROTATIONS[1] - ROTATIONS[0]] = [correct, correct * 100 / total_icons, incorrect, total_time, t]
 
     print("Done\n\n")
 
-    output = open("results.pkl", 'wb')
-    pickle.dump(metrics, output)
-    output.close()
+    # output = open("results.pkl", 'wb')
+    # pickle.dump(metrics, output)
+    # output.close()
 
 
 if __name__ == "__main__":
