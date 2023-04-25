@@ -29,6 +29,12 @@ def check_templates(rot_file, sca_file, templates, training, rotations, octaves)
 
 
 def get_scale_percentage(depth, n=100.0):
+    """
+    octave = 1 => 50%
+    :param depth: The depth you want the corresponding percentage for
+    :param n: Ignore (it's a recursion variable)
+    :return: The depth as a percentage of the original image size
+    """
     if depth == 0:
         return n
 
@@ -36,6 +42,12 @@ def get_scale_percentage(depth, n=100.0):
 
 
 def create_gaussian_pyramid_image(img, result):
+    """
+    Creates a visual of the Gaussian pyramid cascade
+    :param img: The original image
+    :param result: The Gaussian pyramid
+    :return: The final image
+    """
     comp_rows = max(img.shape[0], sum(p.shape[0] for _, p in result))
     comp_cols = img.shape[0] + result[0][1].shape[1]
     comp_img = np.full((comp_rows, comp_cols), 255, dtype=np.int64)

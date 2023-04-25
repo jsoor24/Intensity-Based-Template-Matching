@@ -27,12 +27,10 @@ SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
 OCTAVES = [1, 2, 3]
 ROTATIONS = [0, 90, 180, 270]
 
-metrics = {}
-
 
 def main():
     t = generate_templates()
-    test_template_matching(t)
+    test_template_matching()
 
 
 def create_gaussian_pyramid(img):
@@ -235,7 +233,7 @@ def histogram_matching(test_region, template):
     return similarity
 
 
-def test_template_matching(t):
+def test_template_matching():
     """
     Performs template matching on all the available test images
     Note: Assumes test files are named "test_image_i.png"
