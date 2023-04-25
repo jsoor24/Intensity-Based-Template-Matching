@@ -138,7 +138,7 @@ def generate_templates():
     return total_time
 
 
-def template_matching(path="test_image_1.png", method='cv.TM_CCORR_NORMED', cutoff=0.64):
+def template_matching(path, method, cutoff):
     """
     For each scaled/rotated template perform library template matching
     Scale the score if the image is smaller (to give lower score
