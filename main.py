@@ -331,24 +331,24 @@ def test_template_matching():
         # Print metrics
         print("\n----------------------\n")
         print(m)
+        print("{} cut-off".format(c))
         print("{} total icons\n{} correct template matches".format(total_icons, correct))
         print("{:.2f}% accuracy".format(correct * 100 / total_icons))
         print("{} false positives".format(incorrect))
         print("{} missed".format(total_icons - correct))
         if correct != 0:
             print("{:.3f} average IoU".format(total_iou / correct))
-        if correct != 0:
-            print("{:.2f} average value when correct".format(correct_val / correct))
-        if incorrect != 0:
-            print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
-        print("{} cut-off".format(c))
+        # if correct != 0:
+        #     print("{:.2f} average value when correct".format(correct_val / correct))
+        # if incorrect != 0:
+        #     print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
         print("{:.2f}s total time\n{:.2f} / 20 = {:.2f}s average time (assuming 20 tests)".format(total_time, total_time, total_time / 20))
         print("Results written to {}".format(RESULTS_FOLDER))
 
         # correct, accuracy, false positives, total_time, training_time
         # metrics[ROTATIONS[1] - ROTATIONS[0]] = [correct, correct * 100 / total_icons, incorrect, total_time, t]
 
-    print("Done\n\n")
+    print("Done\n")
 
     # output = open("results.pkl", 'wb')
     # pickle.dump(metrics, output)
