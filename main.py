@@ -342,7 +342,7 @@ def test_template_matching():
         if incorrect != 0:
             print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
         print("{} cut-off".format(c))
-        print("{:.2f}s total time\n{:.2f}s average time (assuming 20 tests)".format(total_time, total_time / 20))
+        print("{:.2f}s total time\n{:.2f} / 20 = {:.2f}s average time (assuming 20 tests)".format(total_time, total_time, total_time / 20))
         print("Results written to {}".format(RESULTS_FOLDER))
 
         # correct, accuracy, false positives, total_time, training_time
