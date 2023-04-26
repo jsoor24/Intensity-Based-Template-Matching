@@ -24,6 +24,9 @@ TEMPLATES_FOLDER = "templates/"
 ROT_FILE = TEMPLATES_FOLDER + "rotations.pkl"
 SCA_FILE = TEMPLATES_FOLDER + "scales.pkl"
 
+# Where to write the results
+RESULTS_FOLDER = "results/"
+
 OCTAVES = [1, 2, 3]
 ROTATIONS = [0, 90, 180, 270]
 
@@ -244,7 +247,12 @@ def test_template_matching():
 
     print("Testing template matching...")
 
+    if not os.path.exists(RESULTS_FOLDER):
+        os.makedirs(RESULTS_FOLDER)
+
     # For loop for easier testing of methods/cut-offs
+    # For optimal parameters, there's only one thing in methods
+    # i.e. methods = [('cv.TM_CCOEFF_NORMED', 0.48)]
     for m, c in methods:
         final_results = {}
         answers = {}
@@ -309,7 +317,7 @@ def test_template_matching():
                 total_iou += iou
                 cv.rectangle(test_img, top_l, bot_r, [0, 255, 0], 2)
                 cv.putText(test_img, "{}, {:.2f}".format(name, iou), (top_l[0], top_l[1] - 10), cv.FONT_HERSHEY_SIMPLEX,
-                           0.4, [0, 255, 0])
+                           0.35, [0, 255, 0])
 
             total_time += time.time() - start_time
 
@@ -317,7 +325,7 @@ def test_template_matching():
             plt.imshow(cv.cvtColor(test_img, cv.COLOR_BGR2RGB))
             # plt.show()
             plt.close()
-
+            cv.imwrite("{}results{}.png".format(RESULTS_FOLDER, i), test_img)
             # print("\t\t{} ->\t{}, {}\t({})".format(name, top_l, bot_r, val))
 
         # Print metrics
@@ -335,6 +343,7 @@ def test_template_matching():
             print("{:.2f} average value when incorrect".format(incorrect_val / incorrect))
         print("{} cut-off".format(c))
         print("{:.2f}s total time\n{:.2f}s average time (assuming 20 tests)".format(total_time, total_time / 20))
+        print("Results written to {}".format(RESULTS_FOLDER))
 
         # correct, accuracy, false positives, total_time, training_time
         # metrics[ROTATIONS[1] - ROTATIONS[0]] = [correct, correct * 100 / total_icons, incorrect, total_time, t]
