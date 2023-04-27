@@ -1,5 +1,9 @@
 # Intensity-Based-Template-Matching
 
+Performs intensity template matching to find templates at different scales within given test images. 
+
+## Running the code
+
 Make sure you edit the global constants at the top of main before running.
 
 It will first generate templates which will be written to a templates folder for faster testing. 
